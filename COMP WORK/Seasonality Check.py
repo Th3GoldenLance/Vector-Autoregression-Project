@@ -226,3 +226,29 @@ for var in vars_to_seasonally_diff:
     
     # Print the seasonal strength
     print(f'Seasonal Strength for {var}: {seasonal_strength:.4f}')
+
+# Perform STL decomposition on the seasonally differenced series
+for var in vars_to_seasonally_diff:
+    series = data_diff_seasonal[var].dropna()  # exclude missing values from the differenced series
+    stl = STL(series, period=4)  # period=4 for quarterly data
+    result = stl.fit()
+    
+    # Use result.plot() to plot the STL decomposition
+    fig = result.plot()
+    fig.set_size_inches(10, 8)
+    
+    # Access all axes from the generated figure
+    for ax in fig.axes:
+        # Set major ticks for every 4 years
+        ax.xaxis.set_major_locator(mdates.YearLocator(4))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+
+        # Set minor ticks for each quarter without labels
+        ax.xaxis.set_minor_locator(mdates.MonthLocator([3, 6, 9, 12]))
+
+        # Rotate x-axis labels for better readability
+        ax.tick_params(axis='x', rotation=45)
+
+    plt.suptitle(f'STL Decomposition of Seasonally Differenced {var}', fontsize=16)
+    plt.tight_layout()
+    plt.show()
