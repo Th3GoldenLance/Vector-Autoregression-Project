@@ -61,6 +61,11 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
 
+# Save the new series to a CSV file
+output_file_name = f'{series_name}_detrended_and_seasonally_differenced.csv'
+output_csv_path = os.path.join(csv_subdirectory, output_file_name)
+seasonally_differenced_series.to_csv(output_csv_path, header=True)
+
 # Function to perform ADF and KPSS tests
 def test_stationarity(series):
     # ADF Test
