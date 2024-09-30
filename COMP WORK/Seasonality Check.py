@@ -206,11 +206,11 @@ for var in vars_to_seasonally_diff:
 data_diff_seasonal = data_diff_seasonal[vars_to_seasonally_diff]
 
 # Define output path to save data in the 'CSV Data' folder
-#csv_output_folder = os.path.join(script_dir, 'CSV Data')
-#output_path = os.path.join(csv_output_folder, 'Seasonally_Differenced_Data.csv')
-#data_diff_seasonal.to_csv(output_path)  # Save the resulting data frame to the new CSV file
+csv_output_folder = os.path.join(script_dir, 'CSV Data')
+output_path = os.path.join(csv_output_folder, 'Seasonally_Differenced_Data.csv')
+data_diff_seasonal.to_csv(output_path)  # Save the resulting data frame to the new CSV file
 
-#print(f"Seasonally differenced data saved to: {output_path}")  # Confirm that the CSV was saved
+print(f"Seasonally differenced data saved to: {output_path}")  # Confirm that the CSV was saved
 
 print('The following are the seasonal strengths for the seasonally differenced series')
 for var in vars_to_seasonally_diff:
