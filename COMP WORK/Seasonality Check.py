@@ -15,7 +15,6 @@ import os
 #os.path.abspath(__file__) gets the absolute path of the script file
 #os.path.dirname() extracts the directory path from that absolute path
 script_dir = os.path.dirname(os.path.abspath(__file__))
-
 csv_folder = os.path.join(script_dir, 'CSV Data') #os.path.join() combines the script directory with 'CSV Data' to form the path
 csv_pattern = os.path.join(csv_folder, '*.csv') #This pattern will match all files ending with '.csv' in the 'CSV Data' folder
 csv_files = glob.glob(csv_pattern) #glob.glob() returns a list of file paths that match the given pattern
@@ -46,7 +45,6 @@ if csv_files:
         data_frames.append(df) #Append the DataFrame to the list
 
     data = pd.concat(data_frames, axis=1) #Combines all DataFrames along the columns, aligning them on the 'Date' index
-    
     data.sort_index(inplace=True)   #Sort the DataFrame by Date (index)
     
     #Check for missing values
@@ -54,7 +52,6 @@ if csv_files:
     print(data.isnull().sum())
     
     data.dropna(inplace=True) #Optionally, drop rows with any missing values
-    
     variables = data.columns.tolist()  #Get the list of variable names
     
     #If these checks are cleared, then we can proceed with our analysis
@@ -144,18 +141,36 @@ for var in variables:
 
 #Visual inspection and then seasonal strength matrics show that all series exhibit moderate to strong seasonality
 
-data_diff_seasonal = data.copy()  # Create a copy of original data for seasonal differencing
-# List of all variables requiring seasonal differencing, including '3M TBill SA'
-vars_to_seasonally_diff = ['3M TBill SA', 'US CPI SA', 'US Debt SA', 'US DXY SA', 'US IP SA', 'US UE SA']
+# Create a copy of original data for seasonal differencing
+data_diff_seasonal = data.copy()
+vars_to_seasonally_diff = ['3M TBill SA', 'US CPI SA', 'US DXY SA', 'US IP SA', 'US UE SA']
+special_var = 'US Debt SA'
 
-# Apply seasonal differencing with lag = 4 (quarterly data)
+# Detrend and seasonally difference the special variable
+if special_var in data.columns:
+    series = data[special_var].dropna()
+    stl = STL(series, period=4)
+    result = stl.fit()
+    detrended_series = series - result.trend
+    detrended_seasonally_diff = detrended_series.diff(periods=4).dropna()
+    data_diff_seasonal[special_var] = detrended_seasonally_diff
+    print(f"{special_var} has been detrended and seasonally differenced.")
+
+
+# Apply seasonal differencing with lag = 4 for all other variables
 for var in vars_to_seasonally_diff:
-    data_diff_seasonal[var] = data[var].diff(periods=4)  # Update the data frame with seasonally differenced values
+    if var in data.columns:
+        data_diff_seasonal[var] = data[var].diff(periods=4)
 
-data_diff_seasonal.dropna(inplace=True)  # Drop rows with NaN values resulting from differencing
+# Drop rows with NaN values resulting from differencing
+data_diff_seasonal.dropna(inplace=True)
 
-print("Seasonally Differenced Data:")
-print(data_diff_seasonal.head())  # Print the head of the seasonally differenced data to verify
+# Reorder the columns to include all variables properly (including the special variable)
+data_diff_seasonal = data_diff_seasonal[vars_to_seasonally_diff + [special_var]]
+
+# Print the head of the merged seasonally differenced data to verify
+print("Merged Seasonally Differenced Data:")
+print(data_diff_seasonal.head())
 
 # Visualize the seasonally differenced series
 #This code plots all the seasonally differenced series on the same figure
@@ -184,7 +199,7 @@ print(data_diff_seasonal.head())  # Print the head of the seasonally differenced
 #plt.show()
 
 # Plot each seasonally differenced series separately
-for var in vars_to_seasonally_diff:
+for var in data_diff_seasonal.columns:
     plt.figure(figsize=(10, 5))
     plt.plot(data_diff_seasonal.index, data_diff_seasonal[var])
     plt.title(f'Seasonally Differenced Series of {var}')
@@ -202,18 +217,15 @@ for var in vars_to_seasonally_diff:
     plt.tight_layout()
     plt.show()
 
-# Order the columns to ensure proper arrangement (if needed)
-data_diff_seasonal = data_diff_seasonal[vars_to_seasonally_diff]
-
 # Define output path to save data in the 'CSV Data' folder
 csv_output_folder = os.path.join(script_dir, 'CSV Data')
 output_path = os.path.join(csv_output_folder, 'Seasonally_Differenced_Data.csv')
-data_diff_seasonal.to_csv(output_path)  # Save the resulting data frame to the new CSV file
+data_diff_seasonal.to_csv(output_path)
 
 print(f"Seasonally differenced data saved to: {output_path}")  # Confirm that the CSV was saved
 
 print('The following are the seasonal strengths for the seasonally differenced series')
-for var in vars_to_seasonally_diff:
+for var in data_diff_seasonal.columns:
     series = data_diff_seasonal[var].dropna()  # Exclude any missing values
     stl = STL(series, period=4)
     result = stl.fit()
